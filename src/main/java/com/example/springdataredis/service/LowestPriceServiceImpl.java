@@ -1,11 +1,13 @@
 package com.example.springdataredis.service;
 
 import com.example.springdataredis.vo.Keyword;
+import com.example.springdataredis.vo.NotFoundException;
 import com.example.springdataredis.vo.Product;
 import com.example.springdataredis.vo.ProductGrp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -19,6 +21,24 @@ public class LowestPriceServiceImpl implements LowestPriceService {
     public Set getZsetValue(String key) {
         //redis의 zset에서 key의 0~9까지의 값을 가져와 set으로 변환
         return myProductPriceRedis.opsForZSet().rangeWithScores(key, 0, 9);
+    }
+
+    @Override
+    public Set getZsetValueWithStatus(String key) throws Exception {
+        Set myTempSet = myProductPriceRedis.opsForZSet().rangeWithScores(key, 0, 9);
+        if (myTempSet.size() < 1) {
+            throw new Exception("The Key doesn't have any member");
+        }
+        return myTempSet;
+    }
+
+    @Override
+    public Set getZsetValueWithSpecificException(String key) {
+        Set myTempSet = myProductPriceRedis.opsForZSet().rangeWithScores(key, 0, 9);
+        if (myTempSet.size() < 1) {
+            throw new NotFoundException("The Key doesn't exist in redis", HttpStatus.NOT_FOUND);
+        }
+        return myTempSet;
     }
 
     @Override
